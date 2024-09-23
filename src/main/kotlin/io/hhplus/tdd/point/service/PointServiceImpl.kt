@@ -70,7 +70,7 @@ class PointServiceImpl(
             throw NotEnoughPointsException()
         }
 
-        val result = userPointTable.insertOrUpdate(userPointRequest.userId, userPointRequest.amount)
+        val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
         userPointHistoryTable.insert(userPointRequest.userId, userPointRequest.amount, TransactionType.USE, System.currentTimeMillis())
         logger.info("포인트 사용 완료: userId: ${userPointRequest.userId}, amount: ${userPointRequest.amount}, 총 포인트: ${result.point}")
         return result
