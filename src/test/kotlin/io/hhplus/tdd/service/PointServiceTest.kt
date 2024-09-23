@@ -4,6 +4,8 @@ import io.hhplus.tdd.database.PointHistoryTable
 import io.hhplus.tdd.database.UserPointTable
 import io.hhplus.tdd.point.domain.TransactionType
 import io.hhplus.tdd.point.domain.req.UserPointRequest
+import io.hhplus.tdd.point.exception.NotEnoughPointsException
+import io.hhplus.tdd.point.exception.PointOverflowException
 import io.hhplus.tdd.point.service.PointServiceImpl
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -63,7 +65,7 @@ class PointServiceTest {
         val userPoint = userPointTable.selectById(0)
 
         // when
-        val exception = assertThrows(IllegalArgumentException::class.java) {
+        val exception = assertThrows(PointOverflowException::class.java) {
             pointService.charge(UserPointRequest.of(userPoint.id, Long.MAX_VALUE))
         }
 
@@ -77,7 +79,7 @@ class PointServiceTest {
         val userPoint = userPointTable.selectById(0)
 
         // when
-        val exception = assertThrows(IllegalArgumentException::class.java) {
+        val exception = assertThrows(NotEnoughPointsException::class.java) {
             pointService.use(UserPointRequest.of(userPoint.id, 2))
         }
 

@@ -6,6 +6,8 @@ import io.hhplus.tdd.point.domain.PointHistory
 import io.hhplus.tdd.point.domain.TransactionType
 import io.hhplus.tdd.point.domain.UserPoint
 import io.hhplus.tdd.point.domain.req.UserPointRequest
+import io.hhplus.tdd.point.exception.NotEnoughPointsException
+import io.hhplus.tdd.point.exception.PointOverflowException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -41,7 +43,7 @@ class PointServiceImpl(
             Math.addExact(userPoint.point, userPointRequest.amount)
         } catch (e: ArithmeticException) {
             logger.error("original: ${userPoint.point} + new: ${userPointRequest.amount} = ${userPoint.point + userPointRequest.amount}")
-            throw IllegalArgumentException("포인트의 범위가 지원하는 범위를 넘어섰습니다.")
+            throw PointOverflowException()
         }
 
         val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
@@ -64,8 +66,8 @@ class PointServiceImpl(
         val newPoint = userPoint.point - userPointRequest.amount
 
         if (newPoint < 0) {
-            logger.info("현재 포인트: ${userPoint.point}, 사용하려는 포인트: ${userPointRequest.amount} = ${userPoint.point - userPointRequest.amount} <")
-            throw IllegalArgumentException("포인트가 부족합니다.")
+            logger.warn("현재 포인트: ${userPoint.point}, 사용하려는 포인트: ${userPointRequest.amount} = ${userPoint.point - userPointRequest.amount} <")
+            throw NotEnoughPointsException()
         }
 
         val result = userPointTable.insertOrUpdate(userPointRequest.userId, userPointRequest.amount)
