@@ -9,7 +9,7 @@ class UserPointRequestTest {
     @Test
     fun `userId가 0보다 작을 경우 IllegalArgumentException`() {
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            UserPointRequest.of(-1, 100).validate()
+            UserPointRequest.of(-1, 100)
         }
 
         assertEquals("userId는 0 이상이어야 합니다.", exception.message)
@@ -18,7 +18,7 @@ class UserPointRequestTest {
     @Test
     fun `amount가 0보다 작거나 같을 경우 IllegalArgumentException`() {
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            UserPointRequest.of(1, -100).validate()
+            UserPointRequest.of(1, -100)
         }
 
         assertEquals("amount는 0 이상이어야 합니다.", exception.message)
