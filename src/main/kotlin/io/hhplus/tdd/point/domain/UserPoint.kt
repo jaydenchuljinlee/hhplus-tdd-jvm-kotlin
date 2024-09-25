@@ -23,7 +23,11 @@ data class UserPoint(
         val newPoint = try {
             Math.addExact(this.point, amount)
         } catch (e: ArithmeticException) {
-            throw PointOverflowException()
+            throw PointOverflowException("포인트의 범위를 넘어서는 연산입니다.")
+        }
+
+        if (newPoint > PointRange.MAX) {
+            throw PointOverflowException("포인트는 최대 1,000,000,000 이하로 보유할 수 있습니다.")
         }
 
         return newPoint
