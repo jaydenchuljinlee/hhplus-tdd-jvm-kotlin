@@ -23,9 +23,11 @@ class PointServiceImpl(
     }
 
     override fun charge(userPointRequest: UserPointRequest): UserPoint {
-        val userPoint = userPointTable.selectById(userPointRequest.userId)
+        return pointLockContainer.withLock(userPointRequest.userId) {
+            val userPoint = userPointTable.selectById(userPointRequest.userId)
 
-        return pointLockContainer.withLock(userPoint.id) {
+            logger.warn("포인트 충전 요청: 사용자 ${userPointRequest.userId} 현재 포인트: ${userPoint.point}, 충전하려는 포인트: ${userPointRequest.amount}")
+
             val newPoint = userPoint.charge(userPointRequest.amount)
             val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
 
@@ -36,9 +38,11 @@ class PointServiceImpl(
     }
 
     override fun use(userPointRequest: UserPointRequest): UserPoint {
-        val userPoint = userPointTable.selectById(userPointRequest.userId)
+        return pointLockContainer.withLock(userPointRequest.userId) {
+            val userPoint = userPointTable.selectById(userPointRequest.userId)
 
-        return pointLockContainer.withLock(userPoint.id) {
+            logger.warn("포인트 사용 요청: 사용자 ${userPointRequest.userId} 현재 포인트: ${userPoint.point}, 사용하려는 포인트: ${userPointRequest.amount}")
+
             val newPoint = userPoint.use(userPointRequest.amount)
             val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
 
