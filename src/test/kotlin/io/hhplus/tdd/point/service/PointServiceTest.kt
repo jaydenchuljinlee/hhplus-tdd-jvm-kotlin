@@ -11,24 +11,27 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CompletableFuture
 
 
 class PointServiceTest {
     private lateinit var userPointTable: UserPointTable
     private lateinit var userPointHistoryTable: PointHistoryTable
+    private lateinit var userPointLockContainer: PointLockContainer
     private lateinit var pointService: PointServiceImpl
 
     @BeforeEach
     fun before() {
         userPointTable = UserPointTable()
+        userPointHistoryTable = PointHistoryTable()
+        userPointLockContainer = PointLockContainer()
+
+        // 초기 데이터 생성
         val userPoint = userPointTable.insertOrUpdate(0, 1)
 
-        val now = System.currentTimeMillis()
+        userPointHistoryTable.insert(userPoint.id, userPoint.point, TransactionType.CHARGE,  System.currentTimeMillis())
 
-        userPointHistoryTable = PointHistoryTable()
-        userPointHistoryTable.insert(userPoint.id, userPoint.point, TransactionType.CHARGE, now)
-
-        pointService = PointServiceImpl(userPointTable, userPointHistoryTable)
+        pointService = PointServiceImpl(userPointTable, userPointHistoryTable, userPointLockContainer)
     }
 
     @DisplayName("UserPoint가 등록되지 않은 사용자의 포인트는 0이다")
@@ -90,5 +93,55 @@ class PointServiceTest {
 
         // then
         assertEquals("포인트가 부족합니다.", exception.message)
+    }
+
+    @DisplayName("같은 사용자에 대한 동시 충전 및 사용 결과의 데이터 정합성이 보장된다.")
+    @Test
+    fun `동시 포인트 사용 결과 포인트는 기존과 동일해야 한다`() {
+        // given
+        val userPoint = userPointTable.selectById(0)
+        pointService.charge(UserPointRequest.of(userPoint.id, 4)) // 추가로 4를 더해줌
+
+        val otherPoint = pointService.charge(UserPointRequest.of(1, 4)) // 새로운 사용자에게 4포인트를 추가
+
+        // when
+        val futures = listOf(
+            // 사용자 0번에 대한 동시 요청 수행
+            CompletableFuture.runAsync {
+                Thread.sleep(10)
+                pointService.charge(UserPointRequest.of(userPoint.id, 1))
+            },
+            CompletableFuture.runAsync {
+                Thread.sleep(15)
+                pointService.use(UserPointRequest.of(userPoint.id, 6))
+            },
+            CompletableFuture.runAsync {
+                Thread.sleep(20)
+                pointService.charge(UserPointRequest.of(userPoint.id, 6))
+            },
+            CompletableFuture.runAsync {
+                Thread.sleep(23)
+                pointService.use(UserPointRequest.of(userPoint.id, 2))
+            },
+
+            // 사용자 1번에 대한 동시 요청 수행. 두 요청은 사용자 0번의 두 번째 요청보다 먼저 시작된다.
+            CompletableFuture.runAsync {
+                Thread.sleep(13)
+                pointService.use(UserPointRequest.of(otherPoint.id, 2))
+            },
+            CompletableFuture.runAsync {
+                Thread.sleep(14)
+                pointService.charge(UserPointRequest.of(otherPoint.id, 2))
+            },
+        )
+
+        CompletableFuture.allOf(*futures.toTypedArray()).join()
+
+        val newUserPoint = pointService.getUserPoint(userPoint.id)
+        val newOtherPoint = pointService.getUserPoint(otherPoint.id)
+
+        // then
+        assertEquals(newUserPoint.point, 4)
+        assertEquals(newOtherPoint.point, 4)
     }
 }

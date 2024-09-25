@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service
 class PointServiceImpl(
     private val userPointTable: UserPointTable,
     private val userPointHistoryTable: PointHistoryTable,
+    private val pointLockContainer: PointLockContainer
 ): PointService {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
@@ -22,30 +23,34 @@ class PointServiceImpl(
     }
 
     override fun charge(userPointRequest: UserPointRequest): UserPoint {
-        val userPoint = userPointTable.selectById(userPointRequest.userId)
+        return pointLockContainer.withLock(userPointRequest.userId) {
+            val userPoint = userPointTable.selectById(userPointRequest.userId)
 
-        logger.warn("포인트 충전 요청: 사용자 ${userPointRequest.userId} 현재 포인트: ${userPoint.point}, 충전하려는 포인트: ${userPointRequest.amount}")
+            logger.info("포인트 충전 요청: 사용자 ${userPointRequest.userId} 현재 포인트: ${userPoint.point}, 충전하려는 포인트: ${userPointRequest.amount}")
 
-        val newPoint = userPoint.charge(userPointRequest.amount)
-        val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
+            val newPoint = userPoint.charge(userPointRequest.amount)
+            val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
 
-        userPointHistoryTable.insert(userPointRequest.userId, userPointRequest.amount, TransactionType.CHARGE, System.currentTimeMillis())
-        logger.info("포인트 충전 완료: userId: ${userPointRequest.userId}, amount: ${userPointRequest.amount}, 총 포인트: ${result.point}")
-        return result
+            userPointHistoryTable.insert(userPointRequest.userId, userPointRequest.amount, TransactionType.CHARGE, System.currentTimeMillis())
+            logger.info("포인트 충전 완료: userId: ${userPointRequest.userId}, amount: ${userPointRequest.amount}, 총 포인트: ${result.point}")
+            result
+        }
     }
 
     override fun use(userPointRequest: UserPointRequest): UserPoint {
-        val userPoint = userPointTable.selectById(userPointRequest.userId)
+        return pointLockContainer.withLock(userPointRequest.userId) {
+            val userPoint = userPointTable.selectById(userPointRequest.userId)
 
-        logger.warn("포인트 사용 요청: 사용자 ${userPointRequest.userId} 현재 포인트: ${userPoint.point}, 사용하려는 포인트: ${userPointRequest.amount}")
+            logger.info("포인트 사용 요청: 사용자 ${userPointRequest.userId} 현재 포인트: ${userPoint.point}, 사용하려는 포인트: ${userPointRequest.amount}")
 
-        val newPoint = userPoint.use(userPointRequest.amount)
-        val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
+            val newPoint = userPoint.use(userPointRequest.amount)
+            val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
 
-        userPointHistoryTable.insert(userPointRequest.userId, userPointRequest.amount, TransactionType.USE, System.currentTimeMillis())
-        logger.info("포인트 사용 완료: userId: ${userPointRequest.userId}, amount: ${userPointRequest.amount}, 총 포인트: ${result.point}")
+            userPointHistoryTable.insert(userPointRequest.userId, userPointRequest.amount, TransactionType.USE, System.currentTimeMillis())
+            logger.info("포인트 사용 완료: userId: ${userPointRequest.userId}, amount: ${userPointRequest.amount}, 총 포인트: ${result.point}")
 
-        return result
+            result
+        }
     }
 
     override fun getPointHistories(userId: Long): List<PointHistory> {
