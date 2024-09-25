@@ -1,14 +1,17 @@
 package io.hhplus.tdd.point.service
 
+import io.hhplus.tdd.database.UserPointTable
 import io.hhplus.tdd.point.domain.PointHistory
 import io.hhplus.tdd.point.domain.UserPoint
 import io.hhplus.tdd.point.domain.req.UserPointRequest
 import org.springframework.stereotype.Service
 
 @Service
-class PointServiceImpl(): PointService {
+class PointServiceImpl(
+    private val userPointTable: UserPointTable
+): PointService {
     override fun getUserPoint(userId: Long): UserPoint {
-        TODO("Not yet implemented")
+        return userPointTable.selectById(userId)
     }
 
     override fun charge(userPointRequest: UserPointRequest): UserPoint {
