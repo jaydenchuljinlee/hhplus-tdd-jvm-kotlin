@@ -8,6 +8,18 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 class UserPointTest {
+    @DisplayName("newPoint가 0보다 작을 때 NotEnoughPointsException을 던진다")
+    @Test
+    fun use_throwsExceptionIfNewPointIsBelowZero() {
+        val myPoint = UserPoint(0, 1, System.currentTimeMillis())
+
+        val exception = assertThrows(NotEnoughPointsException::class.java) {
+            myPoint.use(2)
+        }
+
+        assertEquals("포인트가 부족합니다.", exception.message)
+    }
+
     @DisplayName("두 수의 합이 Long의 최대값을 넘어서게 되면, ArithmeticException이 발생한다.")
     @Test
     fun charge_throwsExceptionIfNewPointIsOverflow() {

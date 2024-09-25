@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point.domain
 
+import io.hhplus.tdd.point.exception.NotEnoughPointsException
 import io.hhplus.tdd.point.exception.PointOverflowException
 
 data class UserPoint(
@@ -7,6 +8,16 @@ data class UserPoint(
     val point: Long,
     val updateMillis: Long,
 ) {
+    fun use(amount: Long): Long {
+        val newPoint = this.point - amount
+
+        if (newPoint < 0) {
+            throw NotEnoughPointsException()
+        }
+
+        return newPoint
+    }
+
     fun charge(amount: Long): Long {
         // Long 타입의 범위를 넘는지 체크
         val newPoint = try {

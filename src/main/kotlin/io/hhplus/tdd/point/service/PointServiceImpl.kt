@@ -35,7 +35,17 @@ class PointServiceImpl(
     }
 
     override fun use(userPointRequest: UserPointRequest): UserPoint {
-        TODO("Not yet implemented")
+        val userPoint = userPointTable.selectById(userPointRequest.userId)
+
+        logger.warn("포인트 사용 요청: 사용자 ${userPointRequest.userId} 현재 포인트: ${userPoint.point}, 사용하려는 포인트: ${userPointRequest.amount}")
+
+        val newPoint = userPoint.use(userPointRequest.amount)
+        val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
+
+        userPointHistoryTable.insert(userPointRequest.userId, userPointRequest.amount, TransactionType.USE, System.currentTimeMillis())
+        logger.info("포인트 사용 완료: userId: ${userPointRequest.userId}, amount: ${userPointRequest.amount}, 총 포인트: ${result.point}")
+
+        return result
     }
 
     override fun getPointHistories(userId: Long): List<PointHistory> {
