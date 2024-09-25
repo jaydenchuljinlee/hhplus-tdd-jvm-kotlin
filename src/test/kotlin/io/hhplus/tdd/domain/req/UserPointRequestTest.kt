@@ -1,4 +1,4 @@
-package io.hhplus.tdd.domain
+package io.hhplus.tdd.domain.req
 
 import io.hhplus.tdd.point.domain.req.UserPointRequest
 import org.junit.jupiter.api.Assertions.assertEquals
