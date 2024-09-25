@@ -98,15 +98,19 @@ class PointServiceTest {
         assertEquals("포인트가 부족합니다.", exception.message)
     }
 
-    @DisplayName("동시 포인트사용: 1, -2, 1, 3, -2, -1")
+    @DisplayName("같은 사용자에 대한 동시 충전 및 사용 결과의 데이터 정합성이 보장된다.")
     @Test
     fun `동시 포인트 사용 결과 포인트는 기존과 동일해야 한다`() {
         // given
         val userPoint = userPointTable.selectById(0)
         pointService.charge(UserPointRequest.of(userPoint.id, 4)) // 추가로 4를 더해줌
 
+
+        val otherPoint = pointService.charge(UserPointRequest.of(1, 4)) // 새로운 사용자에게 4포인트를 추가
+
         // when
         val futures = listOf(
+            // 사용자 0번에 대한 동시 요청 수행
             CompletableFuture.runAsync {
                 Thread.sleep(10)
                 pointService.charge(UserPointRequest.of(userPoint.id, 1))
@@ -123,13 +127,25 @@ class PointServiceTest {
                 Thread.sleep(23)
                 pointService.use(UserPointRequest.of(userPoint.id, 2))
             },
+
+            // 사용자 1번에 대한 동시 요청 수행. 두 요청은 사용자 0번의 두 번째 요청보다 먼저 시작된다.
+            CompletableFuture.runAsync {
+                Thread.sleep(13)
+                pointService.use(UserPointRequest.of(otherPoint.id, 2))
+            },
+            CompletableFuture.runAsync {
+                Thread.sleep(14)
+                pointService.charge(UserPointRequest.of(otherPoint.id, 2))
+            },
         )
 
         CompletableFuture.allOf(*futures.toTypedArray()).join()
 
         val newUserPoint = pointService.getUserPoint(userPoint.id)
+        val newOtherPoint = pointService.getUserPoint(otherPoint.id)
 
         // then
         assertEquals(newUserPoint.point, 4)
+        assertEquals(newOtherPoint.point, 4)
     }
 }
