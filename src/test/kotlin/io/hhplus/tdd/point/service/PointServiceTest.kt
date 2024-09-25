@@ -99,49 +99,62 @@ class PointServiceTest {
     @Test
     fun `동시 포인트 사용 결과 포인트는 기존과 동일해야 한다`() {
         // given
-        val userPoint = userPointTable.selectById(0)
-        pointService.charge(UserPointRequest.of(userPoint.id, 4)) // 추가로 4를 더해줌
+        val firstPoint = userPointTable.selectById(0)
+        pointService.charge(UserPointRequest.of(firstPoint.id, 4)) // 추가로 4를 더해줌
 
-        val otherPoint = pointService.charge(UserPointRequest.of(1, 4)) // 새로운 사용자에게 4포인트를 추가
+        val secondPoint = pointService.charge(UserPointRequest.of(1, 4)) // 새로운 사용자에게 4포인트를 추가
+        val thirdPoint = pointService.charge(UserPointRequest.of(2, 4)) // 3번째 사용자에게 4포인트를 추가
 
         // when
         val futures = listOf(
             // 사용자 0번에 대한 동시 요청 수행
             CompletableFuture.runAsync {
                 Thread.sleep(10)
-                pointService.charge(UserPointRequest.of(userPoint.id, 1))
+                pointService.charge(UserPointRequest.of(firstPoint.id, 1))
             },
             CompletableFuture.runAsync {
                 Thread.sleep(15)
-                pointService.use(UserPointRequest.of(userPoint.id, 6))
+                pointService.use(UserPointRequest.of(firstPoint.id, 3))
             },
             CompletableFuture.runAsync {
                 Thread.sleep(20)
-                pointService.charge(UserPointRequest.of(userPoint.id, 6))
+                pointService.charge(UserPointRequest.of(firstPoint.id, 1))
             },
             CompletableFuture.runAsync {
                 Thread.sleep(23)
-                pointService.use(UserPointRequest.of(userPoint.id, 2))
+                pointService.use(UserPointRequest.of(firstPoint.id, 2))
             },
 
             // 사용자 1번에 대한 동시 요청 수행. 두 요청은 사용자 0번의 두 번째 요청보다 먼저 시작된다.
             CompletableFuture.runAsync {
                 Thread.sleep(13)
-                pointService.use(UserPointRequest.of(otherPoint.id, 2))
+                pointService.use(UserPointRequest.of(secondPoint.id, 2))
             },
             CompletableFuture.runAsync {
                 Thread.sleep(14)
-                pointService.charge(UserPointRequest.of(otherPoint.id, 2))
+                pointService.charge(UserPointRequest.of(secondPoint.id, 2))
+            },
+
+            // 사용자 2번에 대한 동시 요청 수행. 두 요청은 사용자 0번의 두 번째 요청보다 먼저 시작된다.
+            CompletableFuture.runAsync {
+                Thread.sleep(13)
+                pointService.use(UserPointRequest.of(thirdPoint.id, 1))
+            },
+            CompletableFuture.runAsync {
+                Thread.sleep(14)
+                pointService.charge(UserPointRequest.of(thirdPoint.id, 2))
             },
         )
 
         CompletableFuture.allOf(*futures.toTypedArray()).join()
 
-        val newUserPoint = pointService.getUserPoint(userPoint.id)
-        val newOtherPoint = pointService.getUserPoint(otherPoint.id)
+        val newFirstPoint = pointService.getUserPoint(firstPoint.id)
+        val newSecondPoint = pointService.getUserPoint(secondPoint.id)
+        val newThirdPoint = pointService.getUserPoint(thirdPoint.id)
 
         // then
-        assertEquals(newUserPoint.point, 4)
-        assertEquals(newOtherPoint.point, 4)
+        assertEquals(newFirstPoint.point, 2)
+        assertEquals(newSecondPoint.point, 4)
+        assertEquals(newThirdPoint.point, 5)
     }
 }
