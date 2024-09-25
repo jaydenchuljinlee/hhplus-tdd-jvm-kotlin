@@ -2,6 +2,7 @@ package io.hhplus.tdd.point.controller
 
 import io.hhplus.tdd.point.domain.PointHistory
 import io.hhplus.tdd.point.domain.UserPoint
+import io.hhplus.tdd.point.domain.req.UserPointRequest
 import io.hhplus.tdd.point.service.PointService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -42,7 +43,7 @@ class PointController(
         @PathVariable id: Long,
         @RequestBody amount: Long,
     ): UserPoint {
-        return UserPoint(0, 0, 0)
+        return pointService.charge(UserPointRequest.of(id, amount))
     }
 
     /**
