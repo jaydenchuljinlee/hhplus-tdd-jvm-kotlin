@@ -10,7 +10,22 @@ import org.junit.jupiter.api.Test
 
 
 class PointServiceTest {
+    private lateinit var userPointTable: UserPointTable
+    private lateinit var userPointHistoryTable: PointHistoryTable
     private lateinit var pointService: PointServiceImpl
+
+    @BeforeEach
+    fun before() {
+        userPointTable = UserPointTable()
+        val userPoint = userPointTable.insertOrUpdate(0, 1)
+
+        val now = System.currentTimeMillis()
+
+        userPointHistoryTable = PointHistoryTable()
+        userPointHistoryTable.insert(userPoint.id, userPoint.point, TransactionType.CHARGE, now)
+
+        pointService = PointServiceImpl(userPointTable, userPointHistoryTable)
+    }
 
     @DisplayName("UserPoint가 등록되지 않은 사용자의 포인트는 0이다")
     @Test
@@ -20,4 +35,27 @@ class PointServiceTest {
         assertEquals(notExistUserPoint.point, 0)
     }
 
+    @DisplayName("UserPoint가 등록되지 않은 사용자의 히스토리는 존재하지 않는다")
+    @Test
+    fun `UserPoint가 등록되지 않은 사용자의 히스토리는 존재하지 않는다`() {
+        val notExistUserPointHistories = pointService.getPointHistories(999)
+
+        assertEquals(notExistUserPointHistories.size, 0)
+    }
+
+    @DisplayName("현재 등록된 User의 UserPoint는 1이다")
+    @Test
+    fun `현재 등록된 User의 UserPoint는 1이다`() {
+        val notExistUserPoint = pointService.getUserPoint(0)
+
+        assertEquals(notExistUserPoint.point, 1)
+    }
+
+    @DisplayName("UserPoint가 등록된 사용자의 히스토리는 존재한다")
+    @Test
+    fun `UserPoint가 등록된 사용자의 히스토리는 존재한다`() {
+        val notExistUserPointHistories = pointService.getPointHistories(0)
+
+        assertEquals(notExistUserPointHistories.isNotEmpty(), true)
+    }
 }

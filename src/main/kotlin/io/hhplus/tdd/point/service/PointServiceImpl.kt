@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point.service
 
+import io.hhplus.tdd.database.PointHistoryTable
 import io.hhplus.tdd.database.UserPointTable
 import io.hhplus.tdd.point.domain.PointHistory
 import io.hhplus.tdd.point.domain.UserPoint
@@ -8,7 +9,8 @@ import org.springframework.stereotype.Service
 
 @Service
 class PointServiceImpl(
-    private val userPointTable: UserPointTable
+    private val userPointTable: UserPointTable,
+    private val userPointHistoryTable: PointHistoryTable,
 ): PointService {
     override fun getUserPoint(userId: Long): UserPoint {
         return userPointTable.selectById(userId)
@@ -23,6 +25,6 @@ class PointServiceImpl(
     }
 
     override fun getPointHistories(userId: Long): List<PointHistory> {
-        TODO("Not yet implemented")
+        return userPointHistoryTable.selectAllByUserId(userId)
     }
 }
