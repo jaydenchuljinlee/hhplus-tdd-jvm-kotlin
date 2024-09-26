@@ -36,7 +36,7 @@ class PointServiceTest {
 
     @DisplayName("UserPoint가 등록되지 않은 사용자의 포인트는 0이다")
     @Test
-    fun `UserPoint가 등록되지 않은 사용자의 포인트는 0이다`() {
+    fun shouldReturnZeroForUnregisteredUserPoint() {
         val notExistUserPoint = pointService.getUserPoint(999)
 
         assertEquals(notExistUserPoint.point, 0)
@@ -44,7 +44,7 @@ class PointServiceTest {
 
     @DisplayName("UserPoint가 등록되지 않은 사용자의 히스토리는 존재하지 않는다")
     @Test
-    fun `UserPoint가 등록되지 않은 사용자의 히스토리는 존재하지 않는다`() {
+    fun shouldReturnNoHistoryForUnregisteredUserPoint() {
         val notExistUserPointHistories = pointService.getPointHistories(999)
 
         assertEquals(notExistUserPointHistories.size, 0)
@@ -52,7 +52,7 @@ class PointServiceTest {
 
     @DisplayName("현재 등록된 User의 UserPoint는 1이다")
     @Test
-    fun `현재 등록된 User의 UserPoint는 1이다`() {
+    fun shouldReturnUserPointAsOneForRegisteredUser() {
         val notExistUserPoint = pointService.getUserPoint(0)
 
         assertEquals(notExistUserPoint.point, 1)
@@ -66,8 +66,9 @@ class PointServiceTest {
         assertEquals(notExistUserPointHistories.isNotEmpty(), true)
     }
 
+    @DisplayName("포인트 타입 범위 이상의 충전 금액 요청 실패")
     @Test
-    fun `포인트 타입 범위 이상의 충전 금액 요청 실패`() {
+    fun failsWhenChargeExceedsPointLimit() {
         // given
         val userPoint = userPointTable.selectById(0)
 
@@ -77,12 +78,12 @@ class PointServiceTest {
         }
 
         // then
-        assertEquals("포인트의 범위가 지원하는 범위를 넘어섰습니다.", exception.message)
+        assertEquals("포인트의 범위를 넘어서는 연산입니다.", exception.message)
     }
 
     @DisplayName("보유한 포인트 초과 사용으로 인한 포인트 사용 실패")
     @Test
-    fun `보유한 포인트 초과 사용으로 인한 포인트 사용 실패`() {
+    fun shouldFailWhenUsingMoreThanAvailablePoints() {
         // given
         val userPoint = userPointTable.selectById(0)
 
@@ -97,7 +98,7 @@ class PointServiceTest {
 
     @DisplayName("같은 사용자에 대한 동시 충전 및 사용 결과의 데이터 정합성이 보장된다.")
     @Test
-    fun `동시 포인트 사용 결과 포인트는 기존과 동일해야 한다`() {
+    fun concurrentChargeAndUseEnsuresDataIntegrity() {
         // given
         val firstPoint = userPointTable.selectById(0)
         pointService.charge(UserPointRequest.of(firstPoint.id, 4)) // 추가로 4를 더해줌
@@ -157,4 +158,5 @@ class PointServiceTest {
         assertEquals(newSecondPoint.point, 4)
         assertEquals(newThirdPoint.point, 5)
     }
+
 }
