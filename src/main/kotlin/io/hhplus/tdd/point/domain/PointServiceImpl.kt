@@ -1,37 +1,36 @@
-package io.hhplus.tdd.point.service
+package io.hhplus.tdd.point.domain
 
-import io.hhplus.tdd.database.PointHistoryTable
-import io.hhplus.tdd.database.UserPointTable
-import io.hhplus.tdd.point.domain.PointHistory
-import io.hhplus.tdd.point.domain.TransactionType
-import io.hhplus.tdd.point.domain.UserPoint
-import io.hhplus.tdd.point.domain.req.UserPointRequest
+import io.hhplus.tdd.point.controller.dto.UserPointRequest
+import io.hhplus.tdd.point.repository.PointHistoryRepository
+import io.hhplus.tdd.point.repository.UserPointRepository
+import io.hhplus.tdd.point.repository.dto.PointHistory
+import io.hhplus.tdd.point.repository.dto.UserPoint
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
 class PointServiceImpl(
-    private val userPointTable: UserPointTable,
-    private val userPointHistoryTable: PointHistoryTable,
-    private val pointLockContainer: PointLockContainer
+    private val pointLockContainer: PointLockContainer,
+    private val userPointRepository: UserPointRepository,
+    private val pointHistoryRepository: PointHistoryRepository
 ): PointService {
     private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
     override fun getUserPoint(userId: Long): UserPoint {
-        return userPointTable.selectById(userId)
+        return userPointRepository.getUserPoint(userId)
     }
 
     override fun charge(userPointRequest: UserPointRequest): UserPoint {
         return pointLockContainer.withLock(userPointRequest.userId) {
-            val userPoint = userPointTable.selectById(userPointRequest.userId)
+            val userPoint = userPointRepository.getUserPoint(userPointRequest.userId)
 
             logger.info("포인트 충전 요청: 사용자 ${userPointRequest.userId} 현재 포인트: ${userPoint.point}, 충전하려는 포인트: ${userPointRequest.amount}, ${System.currentTimeMillis()}")
 
-            val newPoint = userPoint.charge(userPointRequest.amount)
-            val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
+            userPoint.charge(userPointRequest.amount)
+            val result = userPointRepository.charge(userPoint)
 
-            userPointHistoryTable.insert(userPointRequest.userId, userPointRequest.amount, TransactionType.CHARGE, System.currentTimeMillis())
+            pointHistoryRepository.charge(userPoint)
             logger.info("포인트 충전 완료: 사용자: ${userPointRequest.userId}, amount: ${userPointRequest.amount}, 총 포인트: ${result.point}")
             result
         }
@@ -39,14 +38,14 @@ class PointServiceImpl(
 
     override fun use(userPointRequest: UserPointRequest): UserPoint {
         return pointLockContainer.withLock(userPointRequest.userId) {
-            val userPoint = userPointTable.selectById(userPointRequest.userId)
+            val userPoint = userPointRepository.getUserPoint(userPointRequest.userId)
 
             logger.info("포인트 사용 요청: 사용자 ${userPointRequest.userId} 현재 포인트: ${userPoint.point}, 사용하려는 포인트: ${userPointRequest.amount}, ${System.currentTimeMillis()}")
 
-            val newPoint = userPoint.use(userPointRequest.amount)
-            val result = userPointTable.insertOrUpdate(userPointRequest.userId, newPoint)
+            userPoint.use(userPointRequest.amount)
+            val result = userPointRepository.use(userPoint)
 
-            userPointHistoryTable.insert(userPointRequest.userId, userPointRequest.amount, TransactionType.USE, System.currentTimeMillis())
+            pointHistoryRepository.use(userPoint)
             logger.info("포인트 사용 완료: 사용자: ${userPointRequest.userId}, amount: ${userPointRequest.amount}, 총 포인트: ${result.point}")
 
             result
@@ -54,6 +53,6 @@ class PointServiceImpl(
     }
 
     override fun getPointHistories(userId: Long): List<PointHistory> {
-        return userPointHistoryTable.selectAllByUserId(userId)
+        return pointHistoryRepository.getPointHistories(userId)
     }
 }

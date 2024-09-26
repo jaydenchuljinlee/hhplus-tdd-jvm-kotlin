@@ -1,4 +1,4 @@
-package io.hhplus.tdd.point.service
+package io.hhplus.tdd.point.domain
 
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
@@ -9,7 +9,7 @@ class PointLockContainer {
     private val locks = ConcurrentHashMap<Long, ReentrantLock>()
 
     fun <T> withLock(id: Long, func: () -> T): T {
-        val lock = locks.computeIfAbsent(id) { ReentrantLock() }
+        val lock = locks.computeIfAbsent(id) { ReentrantLock(true) } // 순서 보장을 위해 true로 선언
 
         lock.lock()
 

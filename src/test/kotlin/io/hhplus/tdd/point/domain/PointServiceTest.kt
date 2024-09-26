@@ -1,11 +1,13 @@
-package io.hhplus.tdd.point.service
+package io.hhplus.tdd.point.domain
 
-import io.hhplus.tdd.database.PointHistoryTable
-import io.hhplus.tdd.database.UserPointTable
-import io.hhplus.tdd.point.domain.TransactionType
-import io.hhplus.tdd.point.domain.req.UserPointRequest
+import io.hhplus.tdd.point.controller.dto.UserPointRequest
+import io.hhplus.tdd.point.domain.stub.PointHistoryRepositoryStub
+import io.hhplus.tdd.point.domain.stub.UserPointRepositoryStub
 import io.hhplus.tdd.point.exception.NotEnoughPointsException
 import io.hhplus.tdd.point.exception.PointOverflowException
+import io.hhplus.tdd.point.repository.PointHistoryRepository
+import io.hhplus.tdd.point.repository.UserPointRepository
+import io.hhplus.tdd.point.repository.dto.UserPoint
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
@@ -13,25 +15,25 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CompletableFuture
 
-
 class PointServiceTest {
-    private lateinit var userPointTable: UserPointTable
-    private lateinit var userPointHistoryTable: PointHistoryTable
     private lateinit var userPointLockContainer: PointLockContainer
-    private lateinit var pointService: PointServiceImpl
+    private lateinit var userPointRepository: UserPointRepository
+    private lateinit var pointHistoryRepository: PointHistoryRepository
+
+    private lateinit var pointService: PointService
 
     @BeforeEach
     fun before() {
-        userPointTable = UserPointTable()
-        userPointHistoryTable = PointHistoryTable()
         userPointLockContainer = PointLockContainer()
+        userPointRepository = UserPointRepositoryStub()
+        pointHistoryRepository = PointHistoryRepositoryStub()
 
         // 초기 데이터 생성
-        val userPoint = userPointTable.insertOrUpdate(0, 1)
+        val userPoint = userPointRepository.charge(UserPoint(0, 1, System.currentTimeMillis()))
 
-        userPointHistoryTable.insert(userPoint.id, userPoint.point, TransactionType.CHARGE,  System.currentTimeMillis())
+        pointHistoryRepository.charge(userPoint)
 
-        pointService = PointServiceImpl(userPointTable, userPointHistoryTable, userPointLockContainer)
+        pointService = PointServiceImpl(userPointLockContainer, userPointRepository, pointHistoryRepository)
     }
 
     @DisplayName("UserPoint가 등록되지 않은 사용자의 포인트는 0이다")
@@ -70,7 +72,8 @@ class PointServiceTest {
     @Test
     fun failsWhenChargeExceedsPointLimit() {
         // given
-        val userPoint = userPointTable.selectById(0)
+        val userPoint = userPointRepository.getUserPoint(0)
+        // val userPoint = userPointTable.selectById(0)
 
         // when
         val exception = assertThrows(PointOverflowException::class.java) {
@@ -85,7 +88,8 @@ class PointServiceTest {
     @Test
     fun shouldFailWhenUsingMoreThanAvailablePoints() {
         // given
-        val userPoint = userPointTable.selectById(0)
+        val userPoint = userPointRepository.getUserPoint(0)
+        // val userPoint = userPointTable.selectById(0)
 
         // when
         val exception = assertThrows(NotEnoughPointsException::class.java) {
@@ -100,7 +104,8 @@ class PointServiceTest {
     @Test
     fun concurrentChargeAndUseEnsuresDataIntegrity() {
         // given
-        val firstPoint = userPointTable.selectById(0)
+        val firstPoint = pointService.getUserPoint(0)
+        // val firstPoint = userPointTable.selectById(0)
         pointService.charge(UserPointRequest.of(firstPoint.id, 4)) // 추가로 4를 더해줌
 
         val secondPoint = pointService.charge(UserPointRequest.of(1, 4)) // 새로운 사용자에게 4포인트를 추가

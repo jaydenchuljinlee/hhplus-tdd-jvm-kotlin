@@ -1,6 +1,4 @@
-package io.hhplus.tdd.point.domain.req
-
-import kotlin.jvm.Throws
+package io.hhplus.tdd.point.controller.dto
 
 data class UserPointRequest(
     val userId: Long,

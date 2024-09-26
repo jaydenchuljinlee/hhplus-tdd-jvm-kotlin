@@ -1,6 +1,5 @@
-package io.hhplus.tdd.point.domain
+package io.hhplus.tdd.point.repository.dto
 
-import io.hhplus.tdd.point.domain.UserPoint
 import io.hhplus.tdd.point.exception.NotEnoughPointsException
 import io.hhplus.tdd.point.exception.PointOverflowException
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -39,7 +38,7 @@ class UserPointTest {
     @DisplayName("포인트 충전 시, 보유 포인트는 10억이 넘으면 안 된다.")
     @Test
     fun charge_throwsExceptionIfNewPointIsOverTheOneBillion() {
-        val amount = PointRange.MAX
+        val amount = UserPoint.MAX
 
         val userPoint = UserPoint(0, 1, System.currentTimeMillis())
 
