@@ -21,6 +21,10 @@ class PointServiceImpl(
         return userPointRepository.getUserPoint(userId)
     }
 
+    /*
+    * 포인트 충전 시에는 락을 사용하여 사용자 별로 동시성에 대한 안전성을 확보합니다.
+    * 포인트 조회, 충전, 이력 등록은 같은 트랜잭션에 묶여있어야 하기 때문에 같이 lock을 걸었습니다.
+    * */
     override fun charge(userPointRequest: UserPointRequest): UserPoint {
         return pointLockContainer.withLock(userPointRequest.userId) {
             val userPoint = userPointRepository.getUserPoint(userPointRequest.userId)
@@ -36,6 +40,10 @@ class PointServiceImpl(
         }
     }
 
+    /*
+    * 포인트 사용 시에는 락을 사용하여 사용자 별로 동시성에 대한 안전성을 확보합니다.
+    * 포인트 조회, 사용, 이력 등록은 같은 트랜잭션에 묶여있어야 하기 때문에 같이 lock을 걸었습니다.
+    * */
     override fun use(userPointRequest: UserPointRequest): UserPoint {
         return pointLockContainer.withLock(userPointRequest.userId) {
             val userPoint = userPointRepository.getUserPoint(userPointRequest.userId)
