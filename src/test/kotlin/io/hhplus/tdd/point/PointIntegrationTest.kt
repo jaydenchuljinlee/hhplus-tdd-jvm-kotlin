@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture
 
 /*
 * 실제 사용하는 객체 기반으로 서로 의존성을 가지는 통합 테스트
-* 목적: 동시성 테스트 간에 실제 객체들이 잘 동작하는지 확인
+* 목적: 동시성 테스트 간에 실제 객체들이 잘 동작하는지 확인하는 테스트입니다.
 * */
 class PointIntegrationTest {
     private lateinit var controller : PointController

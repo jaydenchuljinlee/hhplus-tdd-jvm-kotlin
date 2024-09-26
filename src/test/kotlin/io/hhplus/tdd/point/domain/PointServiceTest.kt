@@ -15,6 +15,9 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CompletableFuture
 
+/*
+* 도메인 로직에 대한 테스트입니다.
+* */
 class PointServiceTest {
     private lateinit var userPointLockContainer: PointLockContainer
     private lateinit var userPointRepository: UserPointRepository
@@ -100,12 +103,12 @@ class PointServiceTest {
         assertEquals("포인트가 부족합니다.", exception.message)
     }
 
+    // 단위 테스트에서 동시성 테스트를 수행한 목적은 Stub 객체 기반으로 잘 동작하는지 테스트하기 위해서입니다.
     @DisplayName("같은 사용자에 대한 동시 충전 및 사용 결과의 데이터 정합성이 보장된다.")
     @Test
     fun concurrentChargeAndUseEnsuresDataIntegrity() {
         // given
         val firstPoint = pointService.getUserPoint(0)
-        // val firstPoint = userPointTable.selectById(0)
         pointService.charge(UserPointRequest.of(firstPoint.id, 4)) // 추가로 4를 더해줌
 
         val secondPoint = pointService.charge(UserPointRequest.of(1, 4)) // 새로운 사용자에게 4포인트를 추가

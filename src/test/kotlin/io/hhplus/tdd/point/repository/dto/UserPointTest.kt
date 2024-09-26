@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+/*
+* UserPoint 객체에 대한 충전, 사용 테스트를 담당합니다.
+* */
 class UserPointTest {
     @DisplayName("newPoint가 0보다 작을 때 NotEnoughPointsException을 던진다")
     @Test

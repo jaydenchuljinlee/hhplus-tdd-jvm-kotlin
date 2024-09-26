@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+/*
+* 충전, 사용 API 요청에 대한 파라미터 검증 테스트입니다.
+* */
 class UserPointRequestTest {
 
     @DisplayName("userId가 0보다 작을 경우 IllegalArgumentException")

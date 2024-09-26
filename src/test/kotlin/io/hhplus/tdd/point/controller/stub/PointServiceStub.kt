@@ -9,6 +9,7 @@ import io.hhplus.tdd.point.repository.dto.UserPoint
 
 /*
 * PointService의 동작에 대한 Stub 객체입니다.
+* Repository의 Stub과는 다르게, 서비스의 로직을 모르기 때문에 직접 데이터를 수정해야 합니다.
 * */
 class PointServiceStub: PointService {
     private val table = HashMap<Long, UserPoint>()

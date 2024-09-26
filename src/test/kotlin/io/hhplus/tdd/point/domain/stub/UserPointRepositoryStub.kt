@@ -3,6 +3,9 @@ package io.hhplus.tdd.point.domain.stub
 import io.hhplus.tdd.point.repository.UserPointRepository
 import io.hhplus.tdd.point.repository.dto.UserPoint
 
+/*
+* 포인트 이력 조회를 위한 Repository Stub입니다.
+* */
 class UserPointRepositoryStub : UserPointRepository {
     private val table = HashMap<Long, UserPoint>()
 
